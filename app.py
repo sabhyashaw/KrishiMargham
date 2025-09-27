@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Sep 22 12:18:49 2025
-
-@author: shaws
-"""
-
 from flask import Flask, request, jsonify, render_template, send_from_directory
 import sqlite3
 import requests
@@ -314,3 +307,4 @@ def serve_audio(filename):
 if __name__ == '__main__':
     init_db()
     app.run(debug=True, host="0.0.0.0", port=5000)
+
