@@ -1,4 +1,11 @@
-from flask import Flask, request, jsonify, render_template
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Sep 22 12:18:49 2025
+
+@author: shaws
+"""
+
+from flask import Flask, request, jsonify, render_template, send_from_directory
 import sqlite3
 import requests
 from flask_cors import CORS
@@ -8,7 +15,6 @@ import os
 import tempfile
 from datetime import datetime
 
-# Create Flask app
 app = Flask(__name__, static_folder='static', template_folder='templates')
 CORS(app, resources={r"/*": {"origins": "*"}})
 
@@ -18,7 +24,7 @@ WEATHER_API_KEY = "8da6f6ca6aa97a5ca45da9dd4971b32b"  # replace with your real k
 AUDIO_DIR = os.path.join(app.root_path, 'static', 'audio')
 os.makedirs(AUDIO_DIR, exist_ok=True)
 
-# Simple assistant
+# Simple assistant (keeps previous logic)
 class MalayalamKrishiAssistant:
     def __init__(self):
         self.recognizer = sr.Recognizer()
@@ -34,6 +40,7 @@ class MalayalamKrishiAssistant:
 
     def text_to_speech(self, text):
         try:
+            # create a predictable filename in static/audio
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
             filename = f"resp_{timestamp}.mp3"
             filepath = os.path.join(AUDIO_DIR, filename)
@@ -44,6 +51,7 @@ class MalayalamKrishiAssistant:
             print(f"Text-to-speech error: {e}")
             return None
 
+    # simplified weather translation and query
     def get_weather_info_malayalam(self, location):
         if WEATHER_API_KEY == "8da6f6ca6aa97a5ca45da9dd4971b32b":
             return "കാലാവസ്ഥാ API കീ സജ്ജമല്ല"
@@ -121,6 +129,7 @@ def init_db():
 def home():
     return render_template('index3.html')
 
+# Combined register: create user and farmer and return both ids
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json() or {}
@@ -182,6 +191,7 @@ def get_farmer(user_id):
 
 @app.route('/get_weather/<location>', methods=['GET'])
 def get_weather(location):
+    # If API key not configured, return helpful message
     if WEATHER_API_KEY == "8da6f6ca6aa97a5ca45da9dd4971b32b":
         return jsonify({"error": "API key not configured."}), 500
     try:
@@ -246,6 +256,7 @@ def get_activity(farmer_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Speech to text (expects file field 'audio')
 @app.route('/speech_to_text', methods=['POST'])
 def speech_to_text():
     try:
@@ -282,7 +293,7 @@ def ai_assistant():
                 farmer_context = {'name': farmer_data[0], 'location': farmer_data[1], 'soil_type': farmer_data[2]}
 
         response_text = assistant.process_malayalam_query(user_input, farmer_context)
-        audio_filename = assistant.text_to_speech(response_text)
+        audio_filename = assistant.text_to_speech(response_text)  # returns filename in static/audio or None
 
         conn = sqlite3.connect(DB_NAME, timeout=10)
         cursor = conn.cursor()
@@ -295,8 +306,11 @@ def ai_assistant():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# Serve audio files saved in static/audio
+@app.route('/serve_audio/<path:filename>')
+def serve_audio(filename):
+    return send_from_directory(AUDIO_DIR, filename, as_attachment=False)
 
 if __name__ == '__main__':
     init_db()
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True, host="0.0.0.0", port=5000)
