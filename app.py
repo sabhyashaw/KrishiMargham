@@ -299,12 +299,7 @@ def ai_assistant():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# Serve audio files saved in static/audio
-@app.route('/serve_audio/<path:filename>')
-def serve_audio(filename):
-    return send_from_directory(AUDIO_DIR, filename, as_attachment=False)
 
 if __name__ == '__main__':
     init_db()
     app.run(debug=True, host="0.0.0.0", port=5000)
-
